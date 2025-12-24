@@ -25,6 +25,10 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'packages/preload/src/index.ts'),
         },
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js',
+        },
       },
     },
     resolve: {
