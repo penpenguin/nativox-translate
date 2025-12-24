@@ -13,6 +13,7 @@ import {
   type WorktreeStatus,
 } from '@shared/types'
 import { LumberjackError } from '@shared/errors'
+import type { StructuredError } from '@shared/errors'
 
 const MIGRATIONS: string[] = [
   `
@@ -71,6 +72,17 @@ const MIGRATIONS: string[] = [
     last_seen_at TEXT NOT NULL
   );
   `,
+  `
+  ALTER TABLE worktrees ADD COLUMN base_branch TEXT;
+  ALTER TABLE worktrees ADD COLUMN run_id TEXT;
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS artifact_lineage (
+    artifact_id TEXT NOT NULL,
+    source_artifact_id TEXT NOT NULL,
+    PRIMARY KEY (artifact_id, source_artifact_id)
+  );
+  `,
 ]
 
 const DB_SCHEMA_VERSION = MIGRATIONS.length
@@ -95,6 +107,8 @@ export class StateDB {
   private dbPath: string | null = null
   private lockPath: string | null = null
   private heartbeatTimer: NodeJS.Timeout | null = null
+  private lastMigrationApplied: number[] = []
+  private lastMigrationError?: StructuredError
 
   async open(dbPath: string): Promise<void> {
     this.dbPath = dbPath
@@ -175,11 +189,13 @@ export class StateDB {
     const applied: number[] = []
     const current = this.getSchemaVersion()
     if (current > DB_SCHEMA_VERSION) {
-      throw new LumberjackError(
+      const error = new LumberjackError(
         'STATE_DB_VERSION_TOO_NEW',
         'Database schema version is newer than supported',
         { current, supported: DB_SCHEMA_VERSION }
       )
+      this.lastMigrationError = error.toStructuredError()
+      throw error
     }
     for (let version = current; version < DB_SCHEMA_VERSION; version += 1) {
       const sql = MIGRATIONS[version]
@@ -192,7 +208,7 @@ export class StateDB {
         applied.push(version + 1)
       } catch (error) {
         this.exec('ROLLBACK')
-        throw new LumberjackError(
+        const migrationError = new LumberjackError(
           'STATE_DB_MIGRATION_FAILED',
           'Migration failed',
           {
@@ -200,9 +216,25 @@ export class StateDB {
             reason: error instanceof Error ? error.message : String(error),
           }
         )
+        this.lastMigrationError = migrationError.toStructuredError()
+        throw migrationError
       }
     }
+    this.lastMigrationApplied = applied
+    this.lastMigrationError = undefined
     return { applied }
+  }
+
+  getMigrationStatus(): {
+    schemaVersion: number
+    applied: number[]
+    error?: StructuredError
+  } {
+    return {
+      schemaVersion: DB_SCHEMA_VERSION,
+      applied: this.lastMigrationApplied,
+      error: this.lastMigrationError,
+    }
   }
 
   async createRun(flowId: string, worktreeId: string): Promise<RunRecord> {
@@ -283,14 +315,40 @@ export class StateDB {
     )
   }
 
+  async listNodeStates(runId: string): Promise<NodeStateRecord[]> {
+    return this.all('SELECT * FROM node_states WHERE run_id = :run_id', {
+      run_id: runId,
+    }).map(mapNodeState)
+  }
+
   async createWorktree(record: WorktreeRecord): Promise<void> {
     this.run(
-      `INSERT INTO worktrees (id, path, branch, status, created_at, updated_at)
-       VALUES (:id, :path, :branch, :status, :created_at, :updated_at)`,
+      `INSERT INTO worktrees (
+         id,
+         path,
+         branch,
+         base_branch,
+         run_id,
+         status,
+         created_at,
+         updated_at
+       )
+       VALUES (
+         :id,
+         :path,
+         :branch,
+         :base_branch,
+         :run_id,
+         :status,
+         :created_at,
+         :updated_at
+       )`,
       {
         id: record.id,
         path: record.path,
         branch: record.branch,
+        base_branch: record.baseBranch ?? null,
+        run_id: record.runId ?? null,
         status: record.status,
         created_at: record.createdAt,
         updated_at: record.updatedAt,
@@ -335,6 +393,24 @@ export class StateDB {
         created_at: record.createdAt,
       }
     )
+  }
+
+  async registerArtifactLineage(
+    artifactId: string,
+    sourceArtifactId: string
+  ): Promise<void> {
+    this.run(
+      `INSERT INTO artifact_lineage (artifact_id, source_artifact_id)
+       VALUES (:artifact_id, :source_artifact_id)`,
+      { artifact_id: artifactId, source_artifact_id: sourceArtifactId }
+    )
+  }
+
+  async listArtifactLineage(artifactId: string): Promise<string[]> {
+    return this.all(
+      'SELECT source_artifact_id FROM artifact_lineage WHERE artifact_id = :id',
+      { id: artifactId }
+    ).map((row) => String(row.source_artifact_id))
   }
 
   async getArtifact(artifactId: string): Promise<ArtifactRecord | null> {
@@ -514,6 +590,8 @@ const mapWorktree = (row: Record<string, unknown>): WorktreeRecord => ({
   id: String(row.id),
   path: String(row.path),
   branch: String(row.branch),
+  baseBranch: row.base_branch ? String(row.base_branch) : undefined,
+  runId: row.run_id ? String(row.run_id) : undefined,
   status: row.status as WorktreeStatus,
   createdAt: String(row.created_at),
   updatedAt: String(row.updated_at),

@@ -23,9 +23,16 @@ const api: LumberjackIpcApi = {
     get: (worktreeId) =>
       ipcRenderer.invoke(IPC_CHANNELS.worktreesGet, worktreeId),
     list: () => ipcRenderer.invoke(IPC_CHANNELS.worktreesList),
+    merge: (worktreeId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreesMerge, worktreeId),
+    remove: (worktreeId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreesRemove, worktreeId),
   },
   status: {
     get: () => ipcRenderer.invoke(IPC_CHANNELS.statusGet),
+  },
+  migrations: {
+    get: () => ipcRenderer.invoke(IPC_CHANNELS.migrationsGet),
   },
   events: {
     subscribe: (handler) => {
@@ -36,6 +43,17 @@ const api: LumberjackIpcApi = {
         ipcRenderer.removeListener(IPC_CHANNELS.events, listener)
       }
     },
+  },
+  approval: {
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.approvalsList),
+    approve: (approvalId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.approvalsApprove, approvalId),
+    reject: (approvalId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.approvalsReject, approvalId),
+  },
+  session: {
+    get: () => ipcRenderer.invoke(IPC_CHANNELS.sessionGet),
+    save: (flowId) => ipcRenderer.invoke(IPC_CHANNELS.sessionSave, flowId),
   },
 }
 

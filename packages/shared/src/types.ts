@@ -3,6 +3,9 @@ export const CURRENT_FLOW_SCHEMA_VERSION = 1
 export interface FlowMeta {
   createdAt?: string
   updatedAt?: string
+  baseBranch?: string
+  branchPrefix?: string
+  concurrencyLimit?: number
   [key: `x-${string}`]: unknown
 }
 
@@ -50,18 +53,20 @@ export interface AgentConfig {
 }
 
 export interface ArtifactRef {
-  id: string
-  optional?: boolean
+  name: string
+  ref: string
+  required?: boolean
 }
 
 export interface ArtifactDef {
-  id: string
+  name: string
+  path: string
   schema?: Record<string, unknown>
 }
 
 export interface ContextOverride {
-  source: string
-  mode?: 'append' | 'replace'
+  key: string
+  value: string | null
 }
 
 export interface ValidationIssue {
@@ -148,9 +153,17 @@ export interface WorktreeRecord {
   id: string
   path: string
   branch: string
+  baseBranch?: string
+  runId?: string
   status: WorktreeStatus
   createdAt: string
   updatedAt: string
+}
+
+export interface MergeResult {
+  worktreeId: string
+  branch: string
+  baseBranch: string
 }
 
 export interface ArtifactRecord {
@@ -161,6 +174,12 @@ export interface ArtifactRecord {
   hash?: string
   meta?: Record<string, unknown>
   createdAt: string
+}
+
+export interface NodeResultSummary {
+  nodeId: string
+  success: boolean
+  summary?: string
 }
 
 export interface EventRecord {
@@ -179,6 +198,18 @@ export interface ApprovedCommandRecord {
   hash: string
   approvedAt: string
   lastSeenAt: string
+}
+
+export interface PendingApproval {
+  id: string
+  commandPath: string
+  args: string[]
+  reason: string
+}
+
+export interface SessionState {
+  projectRoot?: string
+  flowId?: string
 }
 
 export interface LockResult {

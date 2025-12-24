@@ -2,7 +2,12 @@ import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { registerIpc } from './ipc'
 import { FlowStore } from '@core/flowStore'
+import { StateDB } from '@core/stateDb'
+import { WorktreeManager } from '@core/worktreeManager'
+import { StartupRecovery } from '@core/startupRecovery'
 import { EventBus } from './ipcEventBus'
+import { FileSessionStore } from './sessionStore'
+import { toStructuredError } from '@shared/errors'
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -23,11 +28,41 @@ const createWindow = () => {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   const projectRoot = process.cwd()
   const flowStore = new FlowStore({ projectRoot })
+  const stateDb = new StateDB()
+  const worktreeManager = new WorktreeManager({ projectRoot, stateDb })
+  const sessionStore = new FileSessionStore(
+    join(app.getPath('userData'), 'session.json')
+  )
+  const recovery = new StartupRecovery({
+    projectRoot,
+    stateDb,
+    flowStore,
+    worktreeManager,
+    sessionStore,
+  })
+  let migrationStatus = stateDb.getMigrationStatus()
+  try {
+    await recovery.recover()
+    migrationStatus = stateDb.getMigrationStatus()
+  } catch (error) {
+    migrationStatus = {
+      ...stateDb.getMigrationStatus(),
+      error: toStructuredError(error),
+    }
+  }
   const eventBus = new EventBus()
-  registerIpc({ flowStore, eventBus })
+  registerIpc({
+    flowStore,
+    stateDb,
+    eventBus,
+    getMigrationStatus: () => migrationStatus,
+    sessionStore,
+    projectRoot,
+    worktreeManager,
+  })
   createWindow()
 })
 

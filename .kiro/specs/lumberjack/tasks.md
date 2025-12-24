@@ -66,72 +66,72 @@
 
 ## P1. WorktreeManager（Git worktree 管理）
 
-- [ ] default branch 解決（origin/HEAD → main/master）
-- [ ] create/list/remove 実装（git CLI）
-- [ ] runId ベースのユニーク命名
-- [ ] merge 実行と events 記録
-- [ ] worktree status の StateDB 反映
+- [x] default branch 解決（origin/HEAD → main/master）
+- [x] create/list/remove 実装（git CLI）
+- [x] runId ベースのユニーク命名
+- [x] merge 実行と events 記録
+- [x] worktree status の StateDB 反映
 
 ## P1. AgentAdapter（外部 Agent 実行）
 
-- [ ] 標準 task JSON スキーマ定義（context/artifacts/prompt）
-- [ ] env allow/deny 解決（glob、deny 優先、case-sensitive）
-- [ ] adapter command 対応（wrapper script）
-- [ ] stdout 解析（RESULT ブロック）/stderr 分離
-- [ ] redaction ルール適用（ログ/コンテキスト）
+- [x] 標準 task JSON スキーマ定義（context/artifacts/prompt）
+- [x] env allow/deny 解決（glob、deny 優先、case-sensitive）
+- [x] adapter command 対応（wrapper script）
+- [x] stdout 解析（RESULT ブロック）/stderr 分離
+- [x] redaction ルール適用（ログ/コンテキスト）
 
 ## P1. RunEngine（フロー実行）
 
-- [ ] Flow DAG 検証（循環検出）
-- [ ] 依存解決・並列実行（concurrency limit）
-- [ ] Node 状態遷移の永続化（StateDB）
-- [ ] 失敗/ブロック/再実行の制御
-- [ ] interrupted 復帰時の再実行制御
+- [x] Flow DAG 検証（循環検出）
+- [x] 依存解決・並列実行（concurrency limit）
+- [x] Node 状態遷移の永続化（StateDB）
+- [x] 失敗/ブロック/再実行の制御
+- [x] interrupted 復帰時の再実行制御
 
 ## P1. Artifact/Context 管理
 
-- [ ] Node 入出力アーティファクト定義
-- [ ] output 検証（存在/スキーマ）と失敗処理
-- [ ] lineage 登録と参照解決（@node:...）
-- [ ] optional input の扱い
-- [ ] contextOverrides + 前段要約の組み立て
+- [x] Node 入出力アーティファクト定義
+- [x] output 検証（存在/スキーマ）と失敗処理
+- [x] lineage 登録と参照解決（@node:...）
+- [x] optional input の扱い
+- [x] contextOverrides + 前段要約の組み立て
 
 ## P1. 起動時復帰（Startup Recovery）
 
-- [ ] 起動時 StateDB open + migrations
-- [ ] Flow 一括ロード（readOnly/migrated 情報付与）
-- [ ] worktree scan と StateDB 突合（missing/discovered）
-- [ ] running → interrupted への遷移
-- [ ] 最終 Project/Flow の復元
+- [x] 起動時 StateDB open + migrations
+- [x] Flow 一括ロード（readOnly/migrated 情報付与）
+- [x] worktree scan と StateDB 突合（missing/discovered）
+- [x] running → interrupted への遷移
+- [x] 最終 Project/Flow の復元
 
 ## P2. Renderer UI
 
-- [ ] ReactFlow Editor（Flow 編集/保存）
-- [ ] Run Status Dashboard（状態/ログ/再実行）
-- [ ] Worktree Panel（一覧/状態/マージ）
-- [ ] コマンド承認ダイアログ
-- [ ] interrupted 復帰 UI
+- [x] ReactFlow Editor（Flow 編集/保存）
+- [x] Run Status Dashboard（状態/ログ/再実行）
+- [x] Worktree Panel（一覧/状態/マージ）
+- [x] コマンド承認ダイアログ
+- [x] interrupted 復帰 UI
 
 ## P2. スキーマ互換/移行の補強
 
-- [ ] Flow schema migration ルール文書化
-- [ ] StateDB migration エラー報告の UI 表示
-- [ ] migration status の IPC 公開
+- [x] Flow schema migration ルール文書化
+- [x] StateDB migration エラー報告の UI 表示
+- [x] migration status の IPC 公開
 
 ## P2. SDLC フェーズ支援
 
-- [ ] 既定テンプレート/アーティファクトの紐付け
-- [ ] Node phase に応じた UI 補助
+- [x] 既定テンプレート/アーティファクトの紐付け
+- [x] Node phase に応じた UI 補助
 
 ## P2. テスト戦略（t-wada TDD 準拠）
 
-- [ ] FlowStore/StateDB/RunEngine/AgentAdapter のユニットテスト
-- [ ] ProcessManager/WorktreeManager の CLI モックテスト
-- [ ] IPC コントラクトのテスト
-- [ ] 主要フローの結合テスト（最小限）
+- [x] FlowStore/StateDB/RunEngine/AgentAdapter のユニットテスト
+- [x] ProcessManager/WorktreeManager の CLI モックテスト
+- [x] IPC コントラクトのテスト
+- [x] 主要フローの結合テスト（最小限）
 
 ## P3. ドキュメント/サンプル
 
-- [ ] Flow/Node/Artifact の JSON サンプル
-- [ ] local overrides のサンプル
-- [ ] 既知の制約（WSLg、依存 CLI）記載
+- [x] Flow/Node/Artifact の JSON サンプル
+- [x] local overrides のサンプル
+- [x] 既知の制約（WSLg、依存 CLI）記載

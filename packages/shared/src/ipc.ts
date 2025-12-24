@@ -1,4 +1,12 @@
-import type { Flow, FlowLoadResult, RunRecord, WorktreeRecord } from './types'
+import type {
+  Flow,
+  FlowLoadResult,
+  MergeResult,
+  PendingApproval,
+  SessionState,
+  RunRecord,
+  WorktreeRecord,
+} from './types'
 import type { StructuredError } from './errors'
 
 export const IPC_CHANNELS = {
@@ -11,9 +19,17 @@ export const IPC_CHANNELS = {
   runsList: 'lumberjack:runs:list',
   worktreesGet: 'lumberjack:worktrees:get',
   worktreesList: 'lumberjack:worktrees:list',
+  worktreesMerge: 'lumberjack:worktrees:merge',
+  worktreesRemove: 'lumberjack:worktrees:remove',
   statusGet: 'lumberjack:status:get',
+  migrationsGet: 'lumberjack:migrations:get',
   events: 'lumberjack:events',
   eventsEmit: 'lumberjack:events:emit',
+  approvalsList: 'lumberjack:approvals:list',
+  approvalsApprove: 'lumberjack:approvals:approve',
+  approvalsReject: 'lumberjack:approvals:reject',
+  sessionGet: 'lumberjack:session:get',
+  sessionSave: 'lumberjack:session:save',
 } as const
 
 export type IpcResult<T> =
@@ -25,6 +41,12 @@ export interface AppStatus {
   platform: string
   pid: number
   startedAt: string
+}
+
+export interface MigrationStatus {
+  schemaVersion: number
+  applied: number[]
+  error?: StructuredError
 }
 
 export type LumberjackEvent = {
@@ -50,11 +72,25 @@ export interface LumberjackIpcApi {
   worktrees: {
     get: (worktreeId: string) => Promise<IpcResult<WorktreeRecord | null>>
     list: () => Promise<IpcResult<WorktreeRecord[]>>
+    merge: (worktreeId: string) => Promise<IpcResult<MergeResult>>
+    remove: (worktreeId: string) => Promise<IpcResult<void>>
   }
   status: {
     get: () => Promise<IpcResult<AppStatus>>
   }
+  migrations: {
+    get: () => Promise<IpcResult<MigrationStatus>>
+  }
   events: {
     subscribe: (handler: (event: LumberjackEvent) => void) => () => void
+  }
+  approval: {
+    list: () => Promise<IpcResult<PendingApproval[]>>
+    approve: (approvalId: string) => Promise<IpcResult<void>>
+    reject: (approvalId: string) => Promise<IpcResult<void>>
+  }
+  session: {
+    get: () => Promise<IpcResult<SessionState | null>>
+    save: (flowId: string | null) => Promise<IpcResult<void>>
   }
 }

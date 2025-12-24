@@ -4,6 +4,7 @@ import { z } from 'zod'
 import {
   CURRENT_FLOW_SCHEMA_VERSION,
   type Flow,
+  type FlowNode,
   type FlowLoadResult,
   type LocalOverrides,
   type ValidationIssue,
@@ -21,22 +22,24 @@ const agentSchema = z
 
 const artifactRefSchema = z
   .object({
-    id: z.string().min(1),
-    optional: z.boolean().optional(),
+    name: z.string().min(1),
+    ref: z.string().min(1),
+    required: z.boolean().optional(),
   })
   .passthrough()
 
 const artifactDefSchema = z
   .object({
-    id: z.string().min(1),
+    name: z.string().min(1),
+    path: z.string().min(1),
     schema: z.record(z.unknown()).optional(),
   })
   .passthrough()
 
 const contextOverrideSchema = z
   .object({
-    source: z.string().min(1),
-    mode: z.enum(['append', 'replace']).optional(),
+    key: z.string().min(1),
+    value: z.string().nullable(),
   })
   .passthrough()
 
@@ -163,7 +166,8 @@ export class FlowStore {
       )
     }
 
-    const { flow, issues } = this.parseFlow(json)
+    const normalized = normalizeFlow(json)
+    const { flow, issues } = this.parseFlow(normalized)
     const readOnly = flow.schemaVersion > CURRENT_FLOW_SCHEMA_VERSION
     const { migrated, migratedFlow } = migrateSchema(flow)
 
@@ -267,6 +271,70 @@ const migrateSchema = (
     schemaVersion: CURRENT_FLOW_SCHEMA_VERSION,
   }
   return { migrated: true, migratedFlow }
+}
+
+const normalizeFlow = (raw: unknown): unknown => {
+  if (!raw || typeof raw !== 'object') return raw
+  const flow = raw as Flow
+  if (!Array.isArray(flow.nodes)) return raw
+  const nodes = flow.nodes.map((node) => {
+    if (!node || typeof node !== 'object') return node
+    const data = (node as FlowNode).data
+    if (!data || typeof data !== 'object') return node
+    const inputArtifacts = Array.isArray(data.inputArtifacts)
+      ? data.inputArtifacts.map((item) => {
+          if (!item || typeof item !== 'object') return item
+          const legacy = item as Record<string, unknown>
+          const name = (legacy.name as string) ?? (legacy.id as string)
+          const required =
+            typeof legacy.required === 'boolean'
+              ? legacy.required
+              : typeof legacy.optional === 'boolean'
+                ? !legacy.optional
+                : undefined
+          return {
+            ...legacy,
+            name,
+            required,
+          }
+        })
+      : data.inputArtifacts
+    const outputArtifacts = Array.isArray(data.outputArtifacts)
+      ? data.outputArtifacts.map((item) => {
+          if (!item || typeof item !== 'object') return item
+          const legacy = item as Record<string, unknown>
+          const name = (legacy.name as string) ?? (legacy.id as string)
+          return {
+            ...legacy,
+            name,
+          }
+        })
+      : data.outputArtifacts
+    const contextOverrides = Array.isArray(data.contextOverrides)
+      ? data.contextOverrides.map((item) => {
+          if (!item || typeof item !== 'object') return item
+          const legacy = item as Record<string, unknown>
+          const key = (legacy.key as string) ?? (legacy.source as string)
+          const value =
+            legacy.value === undefined ? null : (legacy.value as string | null)
+          return {
+            ...legacy,
+            key,
+            value,
+          }
+        })
+      : data.contextOverrides
+    return {
+      ...node,
+      data: {
+        ...data,
+        inputArtifacts,
+        outputArtifacts,
+        contextOverrides,
+      },
+    }
+  })
+  return { ...flow, nodes }
 }
 
 const mapZodIssue = (issue: z.ZodIssue): ValidationIssue => ({

@@ -1,4 +1,5 @@
 import { defineConfig } from 'electron-vite'
+import react from '@vitejs/plugin-react'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -35,6 +36,7 @@ export default defineConfig({
   },
   renderer: {
     root: resolve(__dirname, 'packages/renderer'),
+    plugins: [react()],
     server: {
       port: 5174,
       strictPort: true,
