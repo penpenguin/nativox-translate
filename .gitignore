@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 # Lumberjack local overrides and runtime data
 .lumberjack/local/
+
+.codex/
