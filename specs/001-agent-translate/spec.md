@@ -12,6 +12,13 @@
 - Q: エラー表示の最小要件は？ → A: 画面上部に明示エラーバナー（見出し＋原因＋再試行）。
 - Q: SC-003 の測定開始/終了条件は？ → A: 開始=ショートカット押下、終了=翻訳結果表示＋コピーボタン押下完了。
 
+### Session 2026-01-08
+- Q: 履歴の上限件数と超過時の扱いは？ → A: 履歴は100件でハード上限。超過分は最古から自動削除。
+- Q: ショートカット時に選択テキストが空の場合の扱いは？ → A: エラーバナー表示（理由: 選択なし）。既存の表示は保持。
+- Q: 翻訳中に再度ショートカットが押された場合の扱いは？ → A: 進行中の翻訳をキャンセルして新しい翻訳を開始（最新優先）。
+- Q: グローバルショートカットは変更可能にする？ → A: 設定画面で変更可能（永続保存）。
+- Q: 履歴に保存する設定情報の粒度は？ → A: 履歴にプロンプト全文＋エージェントコマンドを保存。
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shortcut Translation (Priority: P1)
@@ -88,8 +95,11 @@ and verifying the history list persists and supports copy actions.
 
 ### Edge Cases
 
-- No text is selected when the shortcut is pressed.
+- No text is selected when the shortcut is pressed (show error banner; keep the
+  current displayed translation).
 - The selected text is very long (e.g., multi-paragraph).
+- The shortcut is pressed again while a translation is in progress (cancel
+  in-flight and start the latest).
 - The agent command is missing or fails to execute.
 - The agent command is configured but invalid or not found.
 - The agent returns empty or malformed output.
@@ -112,6 +122,8 @@ and verifying the history list persists and supports copy actions.
 
 - **FR-001**: System MUST capture the currently selected text from the active
   application when a global shortcut is pressed.
+- **FR-001a**: Users MUST be able to configure the global shortcut in the UI,
+  and the setting MUST persist across restarts.
 - **FR-002**: System MUST send the captured text to a locally available AI agent
   using a configured command and display the returned translation.
 - **FR-003**: Users MUST be able to configure a system prompt and a custom
@@ -121,6 +133,8 @@ and verifying the history list persists and supports copy actions.
 - **FR-006**: System MUST display source text and translated text with separate
   copy actions.
 - **FR-007**: System MUST persist translation history locally across sessions.
+- **FR-007a**: Translation history MUST store the full system prompt, custom
+  prompt, and agent command used for each translation.
 - **FR-008**: System MUST display translation history and allow re-opening prior
   entries.
 - **FR-009**: System MUST clearly report errors when the agent is unavailable or
@@ -133,11 +147,20 @@ and verifying the history list persists and supports copy actions.
 - **FR-012**: System MUST deterministically select the configured agent command
   when multiple configs exist by allowing only one isDefault config; if multiple
   are isDefault, the most recently updated config wins.
+- **FR-013**: System MUST cap translation history at 100 entries and delete the
+  oldest entries first when the cap is exceeded.
+- **FR-014**: If no text is selected when the shortcut is pressed, the system
+  MUST show the top-of-screen error banner with reason "no selection" and keep
+  the current displayed translation state unchanged.
+- **FR-015**: If a new shortcut is pressed while a translation is in progress,
+  the system MUST cancel the in-flight translation and start a new one with the
+  latest selection (latest-wins).
 
 ### Key Entities *(include if feature involves data)*
 
 - **TranslationRecord**: A single translation with source text, translated text,
-  target language, prompts used, timestamps, and optional back-translation.
+  target language, prompts used, agent command, timestamps, and optional
+  back-translation.
 - **PromptSettings**: The system prompt and custom prompt applied to requests.
 - **AgentConfig**: The configured agent command and selection rules used for
   translation, including an isDefault flag and updated-at timestamp.
@@ -163,7 +186,7 @@ and verifying the history list persists and supports copy actions.
   measured from shortcut press to copy action after the translation result is
   displayed.
 - **SC-004**: Translation history persists across app restarts with zero data
-  loss for the most recent 100 entries.
+  loss for the most recent 100 entries; older entries are pruned oldest-first.
 
 ## Assumptions & Dependencies
 
