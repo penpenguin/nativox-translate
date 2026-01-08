@@ -4,6 +4,9 @@ import tsPlugin from '@typescript-eslint/eslint-plugin'
 import prettier from 'eslint-config-prettier'
 
 export default [
+  {
+    ignores: ['node_modules/', 'dist/', 'build/', 'coverage/', '*.min.js'],
+  },
   js.configs.recommended,
   {
     files: ['**/*.ts'],

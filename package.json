@@ -15,8 +15,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "prepare": "husky"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "minimatch": "^10.0.1",
@@ -39,17 +38,10 @@
     "electron-vite": "^2.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
-    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
-    "lint-staged": "^15.2.11",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "vite": "^5.4.10",
     "vitest": "^2.1.8"
-  },
-  "lint-staged": {
-    "**/*.{ts,tsx,js,jsx,json,css,md}": [
-      "prettier --write"
-    ]
   }
 }

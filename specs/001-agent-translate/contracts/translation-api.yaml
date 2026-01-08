@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: Agent Translation API
+  version: 1.0.0
+  description: Internal contract for translation, settings, and history.
+servers:
+  - url: http://localhost
+paths:
+  /translations:
+    post:
+      summary: Create a translation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranslationRequest'
+      responses:
+        '200':
+          description: Translation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationRecord'
+        '400':
+          description: Invalid input
+        '500':
+          description: Agent execution failed
+    get:
+      summary: List translation history
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: History list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TranslationRecord'
+  /translations/{id}:
+    get:
+      summary: Fetch a translation by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Translation record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationRecord'
+        '404':
+          description: Not found
+  /settings/prompts:
+    get:
+      summary: Get prompt settings
+      responses:
+        '200':
+          description: Current prompt settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptSettings'
+    put:
+      summary: Update prompt settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptSettings'
+      responses:
+        '200':
+          description: Updated prompt settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptSettings'
+  /settings/agents:
+    get:
+      summary: List available agent configurations
+      responses:
+        '200':
+          description: Agent configuration list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentConfig'
+    put:
+      summary: Update default agent configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentConfig'
+      responses:
+        '200':
+          description: Updated agent configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+components:
+  schemas:
+    TranslationRequest:
+      type: object
+      required:
+        - sourceText
+        - targetLanguage
+      properties:
+        sourceText:
+          type: string
+        targetLanguage:
+          type: string
+        systemPrompt:
+          type: string
+        customPrompt:
+          type: string
+        backTranslate:
+          type: boolean
+          default: false
+        agentCommand:
+          type: string
+    TranslationRecord:
+      type: object
+      required:
+        - id
+        - createdAt
+        - sourceText
+        - targetLanguage
+        - status
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        sourceText:
+          type: string
+        translatedText:
+          type: string
+        backTranslatedText:
+          type: string
+        targetLanguage:
+          type: string
+        systemPrompt:
+          type: string
+        customPrompt:
+          type: string
+        agentCommand:
+          type: string
+        durationMs:
+          type: integer
+        status:
+          type: string
+          enum: [success, error]
+        errorMessage:
+          type: string
+    PromptSettings:
+      type: object
+      properties:
+        systemPrompt:
+          type: string
+        customPrompt:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    AgentConfig:
+      type: object
+      required:
+        - agentId
+        - displayName
+        - command
+      properties:
+        agentId:
+          type: string
+        displayName:
+          type: string
+        command:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+        isDefault:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time

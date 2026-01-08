@@ -1,6 +1,7 @@
 # Nativox Translate
 
-ローカル完結のSDLCフロー実行/可視化ツール（Electron + WSLg前提）。
+WSLg + Electron 上で、環境内の AI Agent（Codex/Claude Code/GeminiCLI など）を
+使ってテキスト翻訳するアプリ。
 
 ## 開発 (WSLg)
 

@@ -11,6 +11,9 @@ export default defineConfig({
       lib: {
         entry: resolve(__dirname, 'packages/main/src/index.ts'),
       },
+      rollupOptions: {
+        external: ['node-sqlite3-wasm'],
+      },
     },
     resolve: {
       alias: {
@@ -46,7 +49,7 @@ export default defineConfig({
       strictPort: true,
     },
     build: {
-      outDir: resolve(__dirname, 'dist/renderer'),
+      outDir: resolve(__dirname, 'out/renderer'),
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'packages/renderer/index.html'),

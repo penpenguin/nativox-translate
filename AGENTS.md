@@ -50,3 +50,10 @@
 
 - Local overrides live in `.lumberjack/local/` and are git-ignored.
 - Do not store secrets in Flow JSON or the StateDB; use existing CLI auth.
+
+## Active Technologies
+- TypeScript 5.7 (ESM) + Electron 33, React 18, electron-vite, node-sqlite3-wasm, zod (001-agent-translate)
+- Local SQLite (node-sqlite3-wasm) (001-agent-translate)
+
+## Recent Changes
+- 001-agent-translate: Added TypeScript 5.7 (ESM) + Electron 33, React 18, electron-vite, node-sqlite3-wasm, zod
