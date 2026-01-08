@@ -24,9 +24,11 @@ import {
 import {
   agentExec,
   captureSelection,
+  createSystemCopyShortcut,
   createTranslationController,
   registerTranslationIpcHandlers,
   registerTranslationShortcut,
+  type ShortcutTranslationResult,
 } from './translation'
 import { translationChannels } from '@shared/translation/ipc'
 
@@ -100,7 +102,7 @@ export type MainAppServices = {
   getHistory: (
     payload: HistoryGetRequestPayload
   ) => Promise<HistoryGetResponsePayload>
-  handleShortcut: () => Promise<TranslateResponsePayload | void>
+  handleShortcut: () => Promise<ShortcutTranslationResult | void>
   dispose?: () => void
 }
 
@@ -137,6 +139,12 @@ const createDefaultAgentConfigs = (
     updatedAt: now().toISOString(),
   },
 ]
+
+const getShortcutRequest = (error: unknown) => {
+  if (!error || typeof error !== 'object') return undefined
+  if (!('request' in error)) return undefined
+  return (error as { request?: TranslateRequestPayload }).request
+}
 
 const buildDefaultServices = (deps: MainAppDeps): MainAppServices => {
   const now = deps.now ?? (() => new Date())
@@ -177,14 +185,17 @@ const buildDefaultServices = (deps: MainAppDeps): MainAppServices => {
     return await translationService.translate({ request: payload, settings, agentConfig })
   }
 
+  const sendCopyShortcut = createSystemCopyShortcut({
+    platform: deps.platform ?? process.platform,
+  })
+
   const handleShortcut = async () => {
     const controller = createTranslationController({
       captureSelection: async () => {
         const selection = await captureSelection({
           clipboard: deps.clipboard,
           sendCopyShortcut: async () => {
-            const focused = deps.BrowserWindow.getFocusedWindow?.()
-            focused?.webContents?.copy?.()
+            await sendCopyShortcut()
           },
           settleDelayMs: 50,
         })
@@ -280,14 +291,19 @@ export const createMainApp = (deps: MainAppDeps, services?: MainAppServices) => 
       onTriggered: () => {
         void runtime
           .handleShortcut()
-          .then((record) => {
-            if (!record) return
-            notifyShortcutResult({ status: 'success', record })
+          .then((result) => {
+            if (!result) return
+            notifyShortcutResult({
+              status: 'success',
+              record: result.record,
+              request: result.request,
+            })
           })
           .catch((error) => {
             notifyShortcutResult({
               status: 'error',
               error: mapTranslationError(error),
+              request: getShortcutRequest(error),
             })
             console.error('Translation shortcut failed', error)
           })

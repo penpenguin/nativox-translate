@@ -21,8 +21,16 @@ export type TranslateRequestPayload = TranslationRequest
 export type TranslateResponsePayload = TranslationRecord
 
 export type TranslationShortcutResultPayload =
-  | { status: 'success'; record: TranslationRecord }
-  | { status: 'error'; error: TranslationErrorInfo }
+  | {
+      status: 'success'
+      record: TranslationRecord
+      request: TranslateRequestPayload
+    }
+  | {
+      status: 'error'
+      error: TranslationErrorInfo
+      request?: TranslateRequestPayload
+    }
 
 export type HistoryListRequestPayload = {
   limit?: number

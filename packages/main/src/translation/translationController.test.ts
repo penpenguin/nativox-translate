@@ -8,14 +8,15 @@ describe('translationController', () => {
       sourceText: 'hello',
       targetLanguage: 'es',
     })
-    const translate = vi.fn().mockResolvedValue({
+    const record = {
       id: 'record-1',
       createdAt: '2026-01-07T00:00:00.000Z',
       sourceText: 'hello',
       translatedText: 'hola',
       targetLanguage: 'es',
       status: 'success',
-    })
+    }
+    const translate = vi.fn().mockResolvedValue(record)
     const onResult = vi.fn()
 
     const controller = createTranslationController({
@@ -25,14 +26,24 @@ describe('translationController', () => {
       onResult,
     })
 
-    await controller.handleShortcut()
+    const result = await controller.handleShortcut()
 
     expect(buildRequest).toHaveBeenCalledWith('hello')
     expect(translate).toHaveBeenCalledWith({
       sourceText: 'hello',
       targetLanguage: 'es',
     })
-    expect(onResult).toHaveBeenCalled()
+    expect(onResult).toHaveBeenCalledWith(record, {
+      sourceText: 'hello',
+      targetLanguage: 'es',
+    })
+    expect(result).toEqual({
+      record,
+      request: {
+        sourceText: 'hello',
+        targetLanguage: 'es',
+      },
+    })
   })
 
   it('does nothing when no text is selected', async () => {

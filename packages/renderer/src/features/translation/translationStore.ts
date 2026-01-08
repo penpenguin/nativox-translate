@@ -82,11 +82,13 @@ const reset = () => {
 }
 
 const applyShortcutResult = (payload: TranslationShortcutResultPayload) => {
+  const nextRequest = payload.request ?? state.lastRequest
   if (payload.status === 'success') {
     setState({
       status: 'success',
       record: payload.record,
       error: undefined,
+      lastRequest: nextRequest,
     })
     return
   }
@@ -95,6 +97,7 @@ const applyShortcutResult = (payload: TranslationShortcutResultPayload) => {
     status: 'error',
     record: undefined,
     error: payload.error,
+    lastRequest: nextRequest,
   })
 }
 

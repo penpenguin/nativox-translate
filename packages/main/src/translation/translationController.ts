@@ -3,12 +3,37 @@ import type {
   TranslateResponsePayload,
 } from '@shared/translation/ipc'
 
+export type ShortcutTranslationResult = {
+  request: TranslateRequestPayload
+  record: TranslateResponsePayload
+}
+
 export type TranslationControllerDeps = {
   captureSelection: () => Promise<{ text: string }>
   buildRequest: (sourceText: string) => TranslateRequestPayload
   translate: (payload: TranslateRequestPayload) => Promise<TranslateResponsePayload>
-  onResult?: (record: TranslateResponsePayload) => void
-  onError?: (error: unknown) => void
+  onResult?: (record: TranslateResponsePayload, request: TranslateRequestPayload) => void
+  onError?: (error: unknown, request: TranslateRequestPayload) => void
+}
+
+const attachRequestToError = (
+  error: unknown,
+  request: TranslateRequestPayload
+) => {
+  if (error instanceof Error) {
+    const enriched = error as Error & { request?: TranslateRequestPayload }
+    enriched.request = request
+    return enriched
+  }
+
+  const wrapped = new Error(typeof error === 'string' ? error : 'Unknown error')
+  const enriched = wrapped as Error & {
+    request?: TranslateRequestPayload
+    cause?: unknown
+  }
+  enriched.request = request
+  enriched.cause = error
+  return wrapped
 }
 
 export const createTranslationController = (deps: TranslationControllerDeps) => {
@@ -22,11 +47,12 @@ export const createTranslationController = (deps: TranslationControllerDeps) => 
 
     try {
       const record = await deps.translate(request)
-      deps.onResult?.(record)
-      return record
+      deps.onResult?.(record, request)
+      return { record, request }
     } catch (error) {
-      deps.onError?.(error)
-      throw error
+      const wrappedError = attachRequestToError(error, request)
+      deps.onError?.(wrappedError, request)
+      throw wrappedError
     }
   }
 
